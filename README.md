@@ -12,7 +12,7 @@ ghc brainfuck.hs
 ## Spúšťanie cez príkazovú riadku
 Skompilovaný program je možné spustiť s parametrom názvu súboru s Brainfuck zdrojovým kódom. Je možné pridať ďalší parameter, ktorý udáva veľkosť pásky. Ak nie je druhý parameter špecifikovaný, tak veľkosť pásky je 30000.
 ```bash
-./brainfuck example.bf
+./brainfuck path/to/file.bf
 ```
 V prípade, že daný súbor neobsahuje validný zdrojový kód, program vyhodí výnimku. Znaky ktoré nie sú Brainfuck inštrukcie ('+', '-', '<', '>', '.', ',', '[', ']') sú ignorované. Za validný kód sa považuje súbor v ktorom sú znaky '[' a ']' správne uzátvorkované.
 
@@ -64,5 +64,6 @@ Príklady:
  - `examples/squares.bf` Vypíše druhé mocniny čísel menšie ako 10000.
  - `examples/tictactoe.bf` Hra tic-tac-toe proti AI. Užívateľ zadá číslo políčka kam chce zahrať a po nejakom čase zahrá počítač.
  - `examples/triangle.bf` Vykreslí Sierpińského trojúholník.
+ - `examples/collatz.bf` Užívateľ zadá číslo a program vypíše počet iterácii Collatzovho problému, kým sa nedostane na 1. Ak je a_n párne, tak a_(n+1) = a_n / 2, ak je a_n nepárne, tak a_(n+1) = 3*a_n + 1. Nie je dokázané, že každé číslo sa dostane na 1, ale zatiaľ to platí pre všetky preskúmané čísla.
 
-Poznámka: Autori programov a bližšie inštrukcie a popis niektorých programov sú priamo v zdrojových kódoch.
+Poznámka: Autori programov, bližšie inštrukcie a popis niektorých programov sú priamo v zdrojových kódoch.
