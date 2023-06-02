@@ -2,7 +2,6 @@ import Control.Monad.Except
 import Data.Functor ((<&>))
 import Data.Word (Word8)
 import System.Environment (getArgs)
-import Prelude hiding (Left, Right)
 
 -- This program is an interpreter for the Brainfuck programming language implemented in Haskell.
 -- Language reference: http://brainfuck.org/brainfuck.html
@@ -22,8 +21,8 @@ type Program = [Instruction]
 data Instruction
   = Inc
   | Dec
-  | Left
-  | Right
+  | LeftMove
+  | RightMove
   | Print
   | Read
   | Loop [Instruction]
@@ -106,8 +105,8 @@ parseInstruction (i : is)
   | i == ',' = ([Read], is)
   | i == '+' = ([Inc], is)
   | i == '-' = ([Dec], is)
-  | i == '<' = ([Left], is)
-  | i == '>' = ([Right], is)
+  | i == '<' = ([LeftMove], is)
+  | i == '>' = ([RightMove], is)
   | i == '[' = ([Loop (parseSourceCode l)], r)
   where
     (l, r) = getBracketedCode (i : is)
@@ -123,17 +122,21 @@ getBracketedCode (x : xs) = check 1 [x] xs
       | r == ']' = check (n - 1) (r : ls) rs
       | otherwise = check n (r : ls) rs
 
--- parse the source code string into a BF program. throws error if brackets are unmatched
+-- parse the source code string into a BF program. The validity of the source code is checked in getProgram
 parseSourceCode :: String -> Program
-parseSourceCode code
-  | not $ checkMatchingBrackets code = error "unmatched brackets"
-  | otherwise = parse (filter (`elem` "+-<>[],.") code) []
+parseSourceCode code = parse (filter (`elem` "+-<>[],.") code) []
   where
     parse :: String -> Program -> Program
     parse [] prog = prog
     parse xs prog = prog ++ parsed ++ parseSourceCode rest
       where
         (parsed, rest) = parseInstruction xs
+
+-- get the program from the source code string, if there are unmatched brackets return the error message string
+getProgram :: String -> Either Program String
+getProgram sourceCode
+  | checkMatchingBrackets sourceCode = Left $ parseSourceCode sourceCode -- if brackets are matched, return the parsed program
+  | otherwise = Right "Error: Unmatched brackets" -- otherwise return the error message
 
 -------------------- Execution --------------------
 
@@ -150,8 +153,8 @@ executeInstruction :: IO Tape -> Instruction -> IO Tape
 executeInstruction t ins
   | ins == Inc = t <&> inc
   | ins == Dec = t <&> dec
-  | ins == Left = t <&> left
-  | ins == Right = t <&> right
+  | ins == LeftMove = t <&> left
+  | ins == RightMove = t <&> right
   | ins == Print = t >>= printChar
   | ins == Read = t >>= readChar
   | otherwise = t >>= executeLoop ins
@@ -162,21 +165,28 @@ execute is t = foldl executeInstruction t is
 
 -- run a BF program from a string of source code
 run :: String -> IO ()
-run code = do
-  execute (parseSourceCode code) (return normTape)
-  return ()
+run sourceCode = do
+  let parsed = getProgram sourceCode
+  case parsed of
+    Right err -> putStrLn err
+    Left prog -> do
+      execute prog (return normTape)
+      return ()
 
 -- run a BF program from a file
 runFile :: String -> IO ()
 runFile filename = do
   code <- readFile filename
-  execute (parseSourceCode code) (return normTape)
-  return ()
+  run code
 
 main :: IO ()
 main = do
   args <- getArgs
-  code <- readFile $ head args
+  sourceCode <- readFile $ head args
   let tape = if length args > 1 then return $ makeTape $ read $ args !! 1 else return normTape
-  execute (parseSourceCode code) tape
-  return ()
+  let parsed = getProgram sourceCode
+  case parsed of
+    Right err -> putStrLn err
+    Left prog -> do
+      execute prog tape
+      return ()
